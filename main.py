@@ -5,15 +5,16 @@ from pygame.locals import *
 import random
 pygame.init()
 
-MOVE_SPEED = 5
-MAX_ENEMIES = 5
-ENEMY_SPEED = 5
 
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((500, 500))
 bg = pygame.image.load(("space.jpg"))
 spaceship = pygame.image.load("galaga_ship.png")
 enemy_sprite = pygame.image.load("enemy_sprite.png")
+
+MOVE_SPEED = 5
+MAX_ENEMIES = 5
+ENEMY_SPEED = 3
 
 
 spaceship_x = screen.get_width() / 2 + 10
@@ -31,24 +32,32 @@ def check_boundaries():
 
 
 def generateEnemies():
-    global players
+    global enemies
     if (len(enemies) < MAX_ENEMIES):
         x = random.randint(0, screen.get_size()[0]-enemy_sprite.get_size()[0])
         enemies.append([x,0])
 
 
 
-def showPlayers():
+def showEnemies():
     print(enemies)
     global screen
     for enemy in enemies:
-        screen.blit(enemy_sprite, (enemies[0]))
+        screen.blit(enemy_sprite, (enemy[0],enemy[1]))
 
 
 def movePlayers():
-    global players
+    global enemies
     for enemy in enemies:
-        enemy[1] += MOVE_SPEED
+        enemy[1] += ENEMY_SPEED
+
+
+
+def removePlayers():
+    global enemies
+    for enemy in enemies:
+        if enemy[1] > screen.get_size()[1]:
+            enemies.remove(enemy)
 
 
 
@@ -69,8 +78,10 @@ while True:
         elif event.key == K_RIGHT:
             spaceship_x += MOVE_SPEED
     screen.blit(bg,(0,0))
+    movePlayers()
     generateEnemies()
-    showPlayers()
+    showEnemies()
     check_boundaries()
+    removePlayers()
     screen.blit(spaceship,(spaceship_x, spaceship_y))
     pygame.display.update()
