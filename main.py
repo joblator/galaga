@@ -24,6 +24,8 @@ spaceship_x = screen.get_width() // 2 + 10
 spaceship_y = screen.get_height() - spaceship.get_size()[1]
 spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
 enemies = []
+points = 0
+font = pygame.font.SysFont(None, 24)
 
 
 
@@ -73,12 +75,13 @@ def moveEnemies():
 
 
 def removeEnemies():
+    global points
     global enemies
-    index = 0
     for enemy in enemies:
         if enemy[1] > screen.get_size()[1]:
             enemies.remove(enemy)
-            index += 1
+            points += 100
+    return points
 
 def collision_detect():
     global spaceship_hitbox
@@ -111,7 +114,9 @@ while True:
         elif event.key == K_RIGHT:
             spaceship_x += MOVE_SPEED
             spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
+    text = font.render('points: '+ str(points), True, (255, 255, 255))
     screen.blit(bg,(0,0))
+    screen.blit(text, (0, 0))
     moveEnemies()
     generateEnemies()
     showEnemies()
