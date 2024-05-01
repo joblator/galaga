@@ -4,6 +4,8 @@ import time
 from pygame.locals import *
 import random
 pygame.init()
+pygame.mixer.init()
+
 
 
 clock = pygame.time.Clock()
@@ -11,23 +13,36 @@ screen = pygame.display.set_mode((500, 500))
 bg = pygame.image.load(("space.jpg"))
 spaceship = pygame.image.load("galaga_ship.png")
 enemy_sprite = pygame.image.load("enemy_sprite.png")
-spaceship_width = spaceship.get_width
-spaceship_height = spaceship.get_height
-enemy_width = enemy_sprite.get_width
-enemy_height = enemy_sprite.get_height
+bullet_sprite = pygame.image.load("bullet.png")
+spaceship_width = spaceship.get_width()
+spaceship_height = spaceship.get_height()
+enemy_width = enemy_sprite.get_width()
+enemy_height = enemy_sprite.get_height()
+LEFT_BORDER = 0
+RIGHT_BORDER = screen.get_width() - enemy_width
 MOVE_SPEED = 5
-MAX_ENEMIES = 3
+MAX_ENEMIES = 1000
 ENEMY_SPEED = 3
+BULLET_SPEED = 10
 
 
 spaceship_x = screen.get_width() // 2 + 10
 spaceship_y = screen.get_height() - spaceship.get_size()[1]
 spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
 enemies = []
+bullets = []
 points = 0
 font = pygame.font.SysFont(None, 24)
+hit_sound = pygame.mixer.Sound("metal_pipe.mp3")
 
+def findTopPlayerY():
+    global enemies
+    min_y=screen.get_height()
 
+    for enemy in enemies:
+        if enemy[1]<min_y:
+            min_y=enemy[1]
+    return min_y
 
 def check_boundaries():
     global spaceship_x
@@ -42,23 +57,45 @@ def check_boundaries():
 
 def generateEnemies():
     global enemies
-    global enemy_width
-    global enemy_height
-    
-    if len(enemies) < MAX_ENEMIES:
-        x = random.randint(0, screen.get_size()[0] - enemy_sprite.get_size()[0])
-        y = 0
-        enemy_width = enemy_sprite.get_width()  # Get enemy width
-        enemy_height = enemy_sprite.get_height()  # Get enemy height
-        enemy_rect = pygame.Rect(x, y, enemy_width, enemy_height)
-        enemies.append([x, y])
+    if (findTopPlayerY()> spaceship.get_size()[1]) and (len(enemies)<MAX_ENEMIES):
+        x = random.randint(0,1)
+        print(x)
+        if x==0:
+            x = random.randint(LEFT_BORDER,LEFT_BORDER+screen.get_width())
+            print(x)
+            enemies.append([x,0])
+        else:
+            x = random.randint(0,RIGHT_BORDER)
+            enemies.append([x,0])
+
+
+def generate_bullet():
+    global spaceship_y
+    global spaceship_x
+    global bullets
+    if event.type == pygame.KEYDOWN:
+        if event.key == K_UP:
+            bullets.append([spaceship_x + spaceship_width - 53,spaceship_y - 30])
+
+
+
+def show_bullets():
+    global screen
+    for bullet in bullets:
+        screen.blit(bullet_sprite, (bullet[0],bullet[1]))
+
+def move_bullets():
+    global bullets
+    for bullet in bullets:
+        bullet[1] -= BULLET_SPEED
+            
+            
 
         
 
 
 
 def showEnemies():
-    print(enemies)
     global screen
     for enemy in enemies:
         screen.blit(enemy_sprite, (enemy[0],enemy[1]))
@@ -66,10 +103,8 @@ def showEnemies():
 
 def moveEnemies():
     global enemies
-    index = 0 
     for enemy in enemies:
         enemy[1] += ENEMY_SPEED
-        index += 1
 
 
 
@@ -84,13 +119,31 @@ def removeEnemies():
     return points
 
 def collision_detect():
-    global spaceship_hitbox
     global enemies
-    spaceship_rect = pygame.Rect(spaceship_hitbox)
+    spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
     for enemy in enemies:
         enemy_rect = pygame.Rect(enemy[0], enemy[1], enemy_width, enemy_height)
-        if spaceship_rect.colliderect(enemy_rect):
-            print("Collision detected!")
+        if spaceship_hitbox.colliderect(enemy_rect):
+
+            sys.exit()
+
+
+def bullet_collision_detect():
+    global enemies
+    global bullets
+    global points
+    for enemy in enemies:
+        enemy_rect = pygame.Rect(enemy[0], enemy[1], enemy_width, enemy_height)
+        for bullet in bullets:
+            bullet_rect = pygame.Rect(bullet[0], bullet[1], bullet_sprite.get_width(), bullet_sprite.get_height())
+            if enemy_rect.colliderect(bullet_rect):
+                if enemy in enemies:
+                    enemies.remove(enemy)
+                    bullets.remove(bullet)
+                    points += 200
+                    hit_sound.play()
+
+
 
 
 
@@ -110,15 +163,17 @@ while True:
     if event.type == pygame.KEYDOWN:
         if event.key == K_LEFT:
             spaceship_x -= MOVE_SPEED
-            spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
         elif event.key == K_RIGHT:
             spaceship_x += MOVE_SPEED
-            spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
     text = font.render('points: '+ str(points), True, (255, 255, 255))
     screen.blit(bg,(0,0))
     screen.blit(text, (0, 0))
     moveEnemies()
     generateEnemies()
+    generate_bullet()
+    show_bullets()
+    move_bullets()
+    bullet_collision_detect()
     showEnemies()
     check_boundaries()
     collision_detect()
