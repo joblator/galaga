@@ -21,9 +21,10 @@ enemy_height = enemy_sprite.get_height()
 LEFT_BORDER = 0
 RIGHT_BORDER = screen.get_width() - enemy_width
 MOVE_SPEED = 5
-MAX_ENEMIES = 1000
-ENEMY_SPEED = 3
+MAX_ENEMIES = 3
+ENEMY_SPEED = 2
 BULLET_SPEED = 10
+MAX_BULLETS = 1
 
 
 spaceship_x = screen.get_width() // 2 + 10
@@ -33,7 +34,14 @@ enemies = []
 bullets = []
 points = 0
 font = pygame.font.SysFont(None, 24)
-hit_sound = pygame.mixer.Sound("metal_pipe.mp3")
+hit_sound = pygame.mixer.Sound("enemy_death.mp3")
+hit_sound.set_volume(1)
+pygame.mixer.music.load('filibuster.mp3')
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play()
+shoot_sound = pygame.mixer.Sound('pewpew.mp3')
+game_over_sound = pygame.mixer.Sound('game_over.wav')
+
 
 def findTopPlayerY():
     global enemies
@@ -75,7 +83,10 @@ def generate_bullet():
     global bullets
     if event.type == pygame.KEYDOWN:
         if event.key == K_UP:
-            bullets.append([spaceship_x + spaceship_width - 53,spaceship_y - 30])
+            if len(bullets) < MAX_BULLETS:
+                bullets.append([spaceship_x + spaceship_width - 53,spaceship_y - 30])
+                shoot_sound.play()
+
 
 
 
@@ -88,7 +99,6 @@ def move_bullets():
     global bullets
     for bullet in bullets:
         bullet[1] -= BULLET_SPEED
-            
             
 
         
@@ -124,7 +134,9 @@ def collision_detect():
     for enemy in enemies:
         enemy_rect = pygame.Rect(enemy[0], enemy[1], enemy_width, enemy_height)
         if spaceship_hitbox.colliderect(enemy_rect):
-
+            game_over_sound.play()
+            pygame.mixer.music.stop()
+            time.sleep(1)
             sys.exit()
 
 
@@ -142,6 +154,8 @@ def bullet_collision_detect():
                     bullets.remove(bullet)
                     points += 200
                     hit_sound.play()
+            if bullet[1] < 0:
+                bullets.remove(bullet)
 
 
 
