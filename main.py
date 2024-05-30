@@ -7,13 +7,17 @@ pygame.init()
 pygame.mixer.init()
 
 
-
+# all the files
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((500, 500))
 bg = pygame.image.load(("space.jpg"))
 spaceship = pygame.image.load("galaga_ship.png")
 enemy_sprite = pygame.image.load("enemy_sprite.png")
 bullet_sprite = pygame.image.load("bullet.png")
+
+
+
+#all the variables
 spaceship_width = spaceship.get_width()
 spaceship_height = spaceship.get_height()
 enemy_width = enemy_sprite.get_width()
@@ -25,14 +29,14 @@ MAX_ENEMIES = 3
 ENEMY_SPEED = 2
 BULLET_SPEED = 10
 MAX_BULLETS = 1
-
-
 spaceship_x = screen.get_width() // 2 + 10
 spaceship_y = screen.get_height() - spaceship.get_size()[1]
 spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
 enemies = []
 bullets = []
 points = 0
+
+#fonts and sounds
 font = pygame.font.SysFont(None, 24)
 hit_sound = pygame.mixer.Sound("enemy_death.mp3")
 hit_sound.set_volume(1)
@@ -42,7 +46,7 @@ pygame.mixer.music.play()
 shoot_sound = pygame.mixer.Sound('pewpew.mp3')
 game_over_sound = pygame.mixer.Sound('game_over.wav')
 
-
+#find the highest enemy and return its y
 def findTopPlayerY():
     global enemies
     min_y=screen.get_height()
@@ -52,6 +56,7 @@ def findTopPlayerY():
             min_y=enemy[1]
     return min_y
 
+#check if the player is on the screen if not return him to the left or right border
 def check_boundaries():
     global spaceship_x
     global spaceship_hitbox
@@ -62,22 +67,16 @@ def check_boundaries():
         spaceship_x = screen.get_width() - spaceship.get_size()[0] 
         spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
 
-
+#randomly adds enemies in a random x spot at the top of the screen
 def generateEnemies():
     global enemies
     if (findTopPlayerY()> spaceship.get_size()[1]) and (len(enemies)<MAX_ENEMIES):
-        x = random.randint(0,1)
-        print(x)
-        if x==0:
-            x = random.randint(LEFT_BORDER,LEFT_BORDER+screen.get_width())
-            print(x)
-            enemies.append([x,0])
-        else:
-            x = random.randint(0,RIGHT_BORDER)
+            x = random.randint(LEFT_BORDER,RIGHT_BORDER)
             enemies.append([x,0])
 
-
+#makes a bullet when the player shoots
 def generate_bullet():
+    keys = pygame.key.get_pressed()
     global spaceship_y
     global spaceship_x
     global bullets
@@ -89,28 +88,25 @@ def generate_bullet():
 
 
 
-
+#prints the bullets on the screen
 def show_bullets():
     global screen
     for bullet in bullets:
         screen.blit(bullet_sprite, (bullet[0],bullet[1]))
-
+#moves the bullets
 def move_bullets():
     global bullets
     for bullet in bullets:
         bullet[1] -= BULLET_SPEED
             
 
-        
-
-
-
+#shows the enemies on the screen
 def showEnemies():
     global screen
     for enemy in enemies:
         screen.blit(enemy_sprite, (enemy[0],enemy[1]))
 
-
+#moves the enemies
 def moveEnemies():
     global enemies
     for enemy in enemies:
@@ -118,7 +114,7 @@ def moveEnemies():
 
 
 
-
+#checks of the enemies are below the floor if so remove then
 def removeEnemies():
     global points
     global enemies
@@ -128,6 +124,24 @@ def removeEnemies():
             points += 100
     return points
 
+# return the value in the highscore file
+def load_highscore():
+    try:
+        with open("highscore.txt", "r") as scorefile:
+            highscore = scorefile.read().strip()
+            if highscore.isdigit():
+                return int(highscore)
+    except FileNotFoundError:
+        pass
+    return 0
+
+#saves the points as the new hightscore
+def save_highscore(new_score):
+    with open("highscore.txt", "w") as scorefile:
+        scorefile.write(str(new_score))
+  
+
+#makes a hitbox of the player and the enemies and checks if they collide
 def collision_detect():
     global enemies
     spaceship_hitbox = pygame.Rect(spaceship_x, spaceship_y, spaceship.get_width(), spaceship.get_height())
@@ -137,9 +151,11 @@ def collision_detect():
             game_over_sound.play()
             pygame.mixer.music.stop()
             time.sleep(1)
+            if load_highscore() < points:
+                save_highscore(points)
             sys.exit()
 
-
+#makes a hitbox of the bullets and enemies and checks if they collide
 def bullet_collision_detect():
     global enemies
     global bullets
@@ -159,16 +175,9 @@ def bullet_collision_detect():
 
 
 
-
-
-
-
-
-
-
 pygame.display.set_caption("Galaga")
 
-
+#main gameloop  
 while True:  
     clock.tick(60)
     for event in pygame.event.get():
@@ -192,6 +201,5 @@ while True:
     check_boundaries()
     collision_detect()
     removeEnemies()
-    print(enemies)
     screen.blit(spaceship,(spaceship_x, spaceship_y))
     pygame.display.update()
